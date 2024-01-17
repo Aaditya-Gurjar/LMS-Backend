@@ -1,6 +1,8 @@
 // import { JsonWebTokenError } from "jsonwebtoken";
 import User from "../models/user.model.js";
 import AppError from "../utils/error.util.js";
+import cloudinary from 'cloudinary'
+import fs from 'fs/promises'
 const cookieOptions = {
     maxAge : 7 * 24 *60 * 60 * 1000, //7days
     httpOnly : true,
@@ -10,10 +12,10 @@ const cookieOptions = {
 const register = async (req,res, next) => 
 {
     const {fullName, email, password} = req.body;
-    if(!fullName || ! email || !password) return next (new AppError("All fields are required", 400)) ;
+    if(!fullName || !email || !password) return next (new AppError("All fields are required", 400)) ;
 
-    const userExist = User.findOne({email});
-    if(userExist) return next(new AppError("Email already exists ", 400))
+    const userExist = await User.findOne({email});
+    if(userExist) return next(new AppError("Email already exists ", 400));
 
     const user = await User.create({
         fullName,
@@ -27,21 +29,43 @@ const register = async (req,res, next) =>
 
     if(!user) return next (new AppError('User Registration Failed, Please try again !', 400))
 
-    // TODO: file upload
+    if(req.file){
+        console.log("File Details", JSON.stringify(req.file));
+        try {
+            const result = await cloudinary.v2.uploader.upload(req.file.path, {
+                folder:'lms',
+                width:250,
+                height:250,
+                gravity:"faces",
+                crop : "fill"
+            });
+
+            if(result){
+                user.avatar.public_id = result.public_id;
+                user.avatar.secure_url = result.secure_url;
+
+                // Remove file from local server 
+                fs.rm(`uploads/${req.file.filename}`)
+            }
+        } catch (error) {
+            return next( new AppError(error || 'File Not uploaded, Please try again Later!', 500));
+        }
+    }
+    
 
     await user.save();
     user.password = undefined
 
     const token = await user.generateJWTToken();
+    res.cookie('token', token, cookieOptions);
 
     res.status(200).json({
         success : true,
-        message : 'User Registered Sucessfuully ',
+        message : 'User Registered Sucessfully ',
         user
         
     })
 
-    res.cookie('token', token, cookieOptions)
 }
 
 

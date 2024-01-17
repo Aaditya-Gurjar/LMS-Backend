@@ -45,21 +45,25 @@ const userSchema = new Schema({
     forgotPasswordExpiry : Date
 }, {timestamps : true});
 
-userSchema.pre('save', async (next)=> {
-    if(!this.isModified('password')) return next();
+
+userSchema.pre('save', async function (next) {
+    // If password is not modified then do not hash it
+    if (!this.isModified('password')) return next();
+  
     this.password = await bcrypt.hash(this.password, 10);
-})
+  });
 
 userSchema.methods = {
-    generateJWTToken : async () => {
-       return await jwt.sign(
-        {id:this._id, email : this._email, subscription: this.subscription} ,
-        process.env.JWT_SECRET,
-        {
-            expiresIn : process.env.JWT_EXPIRY
-        }
-       )
-    },
+   
+  generateJWTToken: async function () {
+    return await jwt.sign(
+      { id: this._id, role: this.role, subscription: this.subscription },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRY,
+      }
+    );
+  },
 
     comparePassword : async (plainTextPassword) => {
         return await bcrypt.compare(plainTextPassword, this.password)
