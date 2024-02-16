@@ -6,10 +6,16 @@ import fs from "fs/promises";
 import sendEmail from "../utils/sendEmail.js";
 // import { appendFile } from "fs";
 import crypto from "crypto";
+// const cookieOptions = {
+//   maxAge: 7 * 24 * 60 * 60 * 1000, //7days
+//   httpOnly: true,
+//   secure: true,
+// };
+
 const cookieOptions = {
-  maxAge: 7 * 24 * 60 * 60 * 1000, //7days
+  secure: process.env.NODE_ENV === 'production' ? true : false,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   httpOnly: true,
-  secure: true,
 };
 
 const register = async (req, res, next) => {
@@ -74,7 +80,7 @@ const register = async (req, res, next) => {
   });
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
@@ -84,7 +90,7 @@ const login = async (req, res) => {
     if (!user || !user.comparePassword(password)) {
       return next(new AppError("Email or Password doesn't match", 400));
     }
-    const token = user.generateJWTToken();
+    const token = await user.generateJWTToken();
     user.password = undefined;
 
     res.cookie("token", token, cookieOptions);
@@ -93,6 +99,8 @@ const login = async (req, res) => {
       success: true,
       message: "User loggedin Successfully",
       user,
+      token
+      
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
@@ -100,12 +108,12 @@ const login = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.cookie(token, null, {
+  res.cookie('token' , null, {
     secure: true,
     maxAge: 0,
     httpOnly: true,
   });
-  res.send(200).json({
+  res.status(200).json({
     success: true,
     message: "User LoggedOut successfully",
   });

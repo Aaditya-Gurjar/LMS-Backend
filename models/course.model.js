@@ -18,7 +18,7 @@ const courseSchema = new Schema({
     category : {
         type : String,
     },
-    thumbmail : {
+    thumbnail : {
         public_id : {
             type: String
         },

@@ -66,8 +66,8 @@ userSchema.methods = {
     );
   },
 
-    comparePassword : async (plainTextPassword) => {
-        return await bcrypt.compare(plainTextPassword, this.password)
+    comparePassword : async function (plainTextPassword)  {
+        return await bcrypt.compare(plainTextPassword, this.password);
     }, 
 
     generatePasswordResetToken : async function ()  {
