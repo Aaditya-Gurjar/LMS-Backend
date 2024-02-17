@@ -6,11 +6,7 @@ import fs from "fs/promises";
 import sendEmail from "../utils/sendEmail.js";
 // import { appendFile } from "fs";
 import crypto from "crypto";
-// const cookieOptions = {
-//   maxAge: 7 * 24 * 60 * 60 * 1000, //7days
-//   httpOnly: true,
-//   secure: true,
-// };
+
 
 const cookieOptions = {
   secure: process.env.NODE_ENV === 'production' ? true : false,
